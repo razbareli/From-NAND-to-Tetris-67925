@@ -1,0 +1,142 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/String.jack
+
+/**
+ * Represents character strings. In addition for constructing and disposing
+ * strings, the class features methods for getting and setting individual
+ * characters of the string, for erasing the string's last character,
+ * for appending a character to the string's end, and more typical
+ * string-oriented operations.
+ */
+class String {
+    field Array str; // the string itself
+    field int curr_length; // the current length of the string
+    field int max_length; // the maximum length of the string
+
+    /** constructs a new empty string with a maximum length of maxLength
+     *  and initial length of 0. */
+    constructor String new(int maxLength) {
+        if (maxLength = 0){
+            let maxLength = 1;
+        }
+        let str = Array.new(maxLength);
+        let curr_length = 0;
+        let max_length = maxLength;
+        return this;
+    }
+
+    /* returns true if the character is a digit, false otherwise */
+    function boolean isDigit(char c){
+        if ( (47 < c) & (c < 58)){
+            return true;
+        }
+        return false;
+    }
+
+    /** Disposes this string. */
+    method void dispose() {
+        do str.dispose();
+        return;
+    }
+
+    /** Returns the current length of this string. */
+    method int length() {
+        return curr_length;
+    }
+
+    /** Returns the character at the j-th location of this string. */
+    method char charAt(int j) {
+        return str[j];
+    }
+
+    /** Sets the character at the j-th location of this string to c. */
+    method void setCharAt(int j, char c) {
+        let str[j] = c;
+        return;
+    }
+
+    /** Appends c to this string's end and returns this string. */
+    method String appendChar(char c) {
+        let str[curr_length] = c;
+        let curr_length = curr_length + 1;
+        return this;
+    }
+
+    /** Erases the last character from this string. */
+    method void eraseLastChar() {
+        let curr_length = curr_length - 1;
+        return;
+    }
+
+    /** Returns the integer value of this string,
+     *  until a non-digit character is detected. */
+    method int intValue() {
+        var int str_index;
+        var int int_value;
+        var boolean negative;
+        let str_index = 0;
+        let int_value = 0;
+
+        if (curr_length = 0){
+            return null;
+        }
+        if (str[0] = 45){ // if the string represents a negative number
+            let negative = true;
+            let str_index = 1;
+        } else {
+            let negative = false;
+        }
+
+        while ((str_index < curr_length) & (String.isDigit(str[str_index]))){
+            let int_value = (int_value * 10) + (str[str_index] - 48);
+            let str_index = str_index + 1;
+        }
+
+        if (negative) {
+            return -int_value;
+        }
+        return int_value;
+
+    }
+
+    /** Sets this string to hold a representation of the given value. */
+    method void setInt(int val) {
+        let curr_length = 0;
+        if (val < 0){
+            let val = -val;
+            do appendChar(45); // append '-' to the start of the string
+        }
+        do setIntHelper(val);
+        return;
+    }
+
+    method void setIntHelper(int val) {
+        var int last_digit;
+        let last_digit = val - ((val/10) * 10); // val modulu 10
+        if (val < 10){
+            do appendChar(last_digit + 48);
+            return;
+        } else {
+            do setIntHelper(val / 10);
+            do appendChar(last_digit + 48);
+            return;
+        }
+    }
+
+    /** Returns the new line character. */
+    function char newLine() {
+        return 128;
+    }
+
+    /** Returns the backspace character. */
+    function char backSpace() {
+        return 129;
+    }
+
+    /** Returns the double quote (") character. */
+    function char doubleQuote() {
+        return 34;
+    }
+}

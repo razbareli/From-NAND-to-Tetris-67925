@@ -1,0 +1,122 @@
+// This file is part of nand2tetris, as taught in The Hebrew University,
+// and was written by Aviv Yaish, and is published under the Creative 
+// Common Attribution-NonCommercial-ShareAlike 3.0 Unported License 
+// https://creativecommons.org/licenses/by-nc-sa/3.0/
+// It is an extension to the specifications given in  
+// https://www.nand2tetris.org (Shimon Schocken and Noam Nisan, 2017)
+// as allowed by the Creative Common Attribution-NonCommercial-ShareAlike 3.0 
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+
+    static Array ram;
+    static Array heap;
+    static Array freeList; //linked list of free blocks
+    static int next;
+    static int length;
+
+    /** Initializes the class. */
+    function void init() {
+        let ram = 0;
+        let heap = 2048; //heap base
+        let freeList = 2048; //all the heap is free at initialization
+
+        /* make all the heap one big block */
+        let heap[0] = 14335;  // length of the heap is 14336, and 1 is reserved for the size
+        let heap[1] = 0;
+
+        /* just for convenience */
+        let next = 1;
+        let length = 0;
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return ram[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let ram[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+        a reference to its base address. */
+    function int alloc(int size) {
+        var Array block;
+        var int blockSize;
+        var Array prevBlock;
+        var Array nextBlock;
+
+        let block = freeList; // head of the list
+        let prevBlock = null;
+        while (~(block[length] > size)){
+            /* advance to next free block */
+            let prevBlock = block; //save previous block
+            let block = block[next];
+            if (block = null){
+                return -1;
+            }
+        }
+        if (block[length] > (size + 2)){
+        /* trim the block to the exact wanted size */
+            let nextBlock = block + size + 1;
+            let nextBlock[next] = block[next];
+            let nextBlock[length] = block[length] - 1 - size;
+            let block[length] = size + 1;
+        } else {
+        /* take all the block */
+            let nextBlock = block[next];
+        }
+        /* delete it from the list */
+        if (prevBlock = null){ //if the block that was allocated was the first in freeList
+            let freeList = nextBlock;
+        } else {
+            let prevBlock[next] = nextBlock;
+        }
+        return block + 1;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var Array newBlock;
+        var Array lastBlock;
+        if ((2047 > o) | (o > 16384)){
+            return;
+        }
+        let newBlock = o - 1;
+        let newBlock[next] = null; //make it the last node in freeList
+        let lastBlock = freeList;
+        while (~(lastBlock[next] = null)){ // go the the last element in freeList
+            let lastBlock = lastBlock[next];
+        }
+        let lastBlock[next] = newBlock; //connect the new block to freeList
+        return;
+    }
+
+    /** Returns the maximal element contained in the given Array/object. */
+	function int max(Array o) { // todo understand what they want
+	   var int len;
+	   var int index;
+	   var int max;
+
+       let max = 0;
+	   let len = o[-1];
+	   let index = 0;
+	   while (index<(len-1)){
+	        if (o[index] > max){
+	            let max = o[index];
+	        }
+	        let index = index + 1;
+	   }
+	   return max;
+    }
+}
