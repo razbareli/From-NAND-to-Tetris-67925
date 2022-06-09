@@ -1,0 +1,76 @@
+// This file is part of nand2tetris, as taught in The Hebrew University,
+// and was written by Aviv Yaish, and is published under the Creative 
+// Common Attribution-NonCommercial-ShareAlike 3.0 Unported License 
+// https://creativecommons.org/licenses/by-nc-sa/3.0/
+
+// This chip is an extension of the regular CPU that uses the extended ALU.
+// If instruction[15]==0 or (instruction[14] and instruction[13] equals 1)
+// the CpuMul behave exactly as the same as the regular CPU.
+// If the instruction is a c-instruction and instruction[14] == 0, the chip will 
+// behave as follows:
+//  Instruction  | 12 | 11 | 10 |
+// ______________________________
+// dest=D<<;jump | 0  | 1  | 1  |
+// dest=A<<;jump | 0  | 1  | 0  |
+// dest=M<<;jump | 1  | 1  | 0  |
+// dest=D>>;jump | 0  | 0  | 1  |
+// dest=A>>;jump | 0  | 0  | 0  |
+// dest=M>>;jump | 1  | 0  | 0  |
+
+CHIP CpuMul {
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset=1) or continue executing
+                         // the current program (reset=0).
+    OUT outM[16],        // M value output
+        writeM,          // Write into M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+    
+    PARTS:
+    // Put you code here:
+	
+	//mux that outputs to register A
+	Mux16 (a=instruction, b=aluOut, sel=instruction[15], out=muxAout);
+	
+	//do not load A register if instruction[15]==1 && instruction[5]==0, else: load A
+	Not (in=instruction[5], out=notIns);
+	And (a=instruction[15], b=notIns, out=andIns);
+	Not (in=andIns, out=loadA);
+	ARegister (in=muxAout, load=loadA, out=regAout);
+	
+	//load D register only if we have C instruction and instruction[4]==1
+	And (a=instruction[15], b=instruction[4], out=loadD);
+	DRegister (in=aluOut, load=loadD , out=regDout);
+	
+	//mux that outputs to the ALU
+	Mux16 (a=regAout, b=inM, sel=instruction[12], out=muxALUout);
+	
+	ExtendAlu(x=regDout, y=muxALUout, instruction=instruction[6..14], out=aluOut, zr=zr, ng=ng);
+
+	//checks if the ALU output is positive
+	Or (a=zr, b=ng, out=or1);
+	Not (in=or1, out=pos);
+	
+	//calculates the g function
+	And (a=instruction[2], b=ng, out=JEQ);
+	And (a=instruction[1], b=zr, out=JLT);
+	And (a=instruction[0], b=pos, out=JGT);
+	Or (a=JEQ, b=JLT, out=JLE);
+	Or (a=JLE, b=JGT, out=gFunc);
+	
+	//load PC only if g==1 && the input is C instruction
+	And (a=instruction[15], b=gFunc, out=pcLoad);
+	
+	//input for pc reset control bit
+	Not (in=pcLoad, out=notJump);
+	
+	PC (in=regAout, load=pcLoad, inc=notJump, reset=reset, out[0..14]=pc);
+	
+	//outputs to memory
+	Or16 (a=false, b=regAout, out[0..14]=addressM);
+	Or16 (a=false, b=aluOut, out=outM);
+	//load writeM only if we have C instruction and instruction[3]==1
+	And (a=instruction[15], b=instruction[3], out=writeM);
+}

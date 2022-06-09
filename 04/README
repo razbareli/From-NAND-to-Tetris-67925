@@ -1,0 +1,20 @@
+unixraz
+===============================================================================
+Raz Bareli, ID 203488747, raz.bareli@mail.huji.ac.il
+===============================================================================
+
+                           Project 4 - Machine Language
+                           ----------------------------
+  
+
+Submitted Files
+---------------
+README - This file.
+mult/Mult.asm - 
+fill/Fill.asm -   
+sort/Sort.asm - bubble sort algorithm
+
+Remarks
+-------
+I chose to implement Bubble Sort algorithm
+I have used 4 variables for this implementation
